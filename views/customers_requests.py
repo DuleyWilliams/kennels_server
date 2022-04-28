@@ -1,41 +1,36 @@
+import sqlite3
+import json
+from models import Customer
+
+
 CUSTOMERS = [
     {
         "id": 1,
         "name": "Hannah Hall",
         "address": "7002 Chestnut Ct",
-        "phoneNumber": "(615) 555-1211",
-        "email": "hannah@test.com"
+        "email": "hannah@test.com",
+        "password": "password"
     },
     {
         "id": 2,
         "name": "Duley Williams",
         "address": "500 Rover Bend Dr",
-        "phoneNumber": "(615) 832-5555",
-        "email": "duley@test.com"
+        "email": "duley@test.com",
+        "password": "password"
     },
     {
         "id": 3,
         "name": "Robert Richardson",
         "address": "1212 Technique Trail",
-        "phoneNumber": "(615) 333-2400",
-        "email": "robert@test.com"
+        "email": "robert@test.com",
+        "password": "password"
     },
     {
         "id": 4,
         "name": "Carl Thompson",
         "address": "978 Broadway",
-        "phoneNumber": "(615) 444-1211",
-        "email": "carl@test.com"
-    },
-    {
-        "email": "asauce@test.com",
-        "name": "Awesome Sauce",
-        "id": 5
-    },
-    {
-        "email": "dtest@me.com",
-        "name": "Dtest Me",
-        "id": 6
+        "email": "carl@test.com",
+        "password": "password"
     }
 ]
 
@@ -75,9 +70,44 @@ CUSTOMERS = [
 
 
 def get_all_customers():
-    return CUSTOMERS
+    # Open a connection to the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
 
-# Function with a single parameter
+        # Just use these. It's a Black Box.
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # Write the SQL query to get the information you want
+        db_cursor.execute("""
+        SELECT
+            a.id,
+            a.name,
+            a.address,
+            a.email,
+            a.password
+        FROM customer a
+        """)
+
+        # Initialize an empty list to hold all animal representations
+        customers = []
+
+        # Convert rows of data into a Python list
+        dataset = db_cursor.fetchall()
+
+        # Iterate list of data returned from database
+        for row in dataset:
+
+            # Create an customer instance from the current row.
+            # Note that the database fields are specified in
+            # exact order of the parameters defined in the
+            # Customer class above.
+            customer = Customer(row['id'], row['name'], row['address'],
+                                row['email'], row['password'],)
+
+            customers.append(customer.__dict__)
+
+    # Use `json` package to properly serialize list as JSON
+    return json.dumps(customers)
 
 
 def get_single_customer(id):
@@ -126,3 +156,13 @@ def delete_customer(id):
     # If the customer was found, use pop(int) to remove it from list
     if customer_index >= 0:
         CUSTOMERS.pop(customer_index)
+
+
+def update_customer(id, new_customer):
+    # Iterate the CUSTOMERS list, but use enumerate() so that
+    # you can access the index value of each item.
+    for index, customer in enumerate(CUSTOMERS):
+        if customer["id"] == id:
+            # Found the customer. Update the value.
+            CUSTOMERS[index] = new_customer
+            break
